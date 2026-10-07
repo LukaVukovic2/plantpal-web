@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Confirming your account...</title>
+  <title>PlantPal - Email Confirmed!</title>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -18,82 +18,91 @@
     .container {
       text-align: center;
       padding: 2rem;
-      max-width: 400px;
+      max-width: 500px;
     }
-    .spinner {
-      border: 4px solid rgba(255, 255, 255, 0.3);
-      border-top: 4px solid white;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
+    .success-icon {
+      width: 80px;
+      height: 80px;
       margin: 0 auto 1.5rem;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
     }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    h1 {
-      font-size: 1.5rem;
-      margin-bottom: 0.5rem;
-    }
-    p {
-      opacity: 0.9;
-      font-size: 1rem;
-    }
+    h1 { font-size: 1.75rem; margin-bottom: 0.75rem; }
+    p { opacity: 0.95; font-size: 1.1rem; line-height: 1.6; }
     .error {
-      background: #dc2626;
-      padding: 1rem;
-      border-radius: 8px;
-      margin-top: 1rem;
+      background: rgba(220, 38, 38, 0.9);
+      padding: 1.25rem;
+      border-radius: 12px;
+      margin-top: 1.5rem;
     }
-    .manual-link {
+    .button {
       display: inline-block;
-      margin-top: 1rem;
-      padding: 0.75rem 1.5rem;
+      margin-top: 1.5rem;
+      padding: 0.875rem 2rem;
       background: white;
       color: #667eea;
       text-decoration: none;
-      border-radius: 6px;
+      border-radius: 8px;
       font-weight: 600;
+      font-size: 1.1rem;
+      cursor: pointer;
+      border: none;
+    }
+    .button:hover {
+      opacity: 0.9;
+    }
+    .steps {
+      background: rgba(255,255,255,0.1);
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-top: 2rem;
+      text-align: left;
+    }
+    .steps ol {
+      margin: 0;
+      padding-left: 1.5rem;
+    }
+    .steps li {
+      margin-bottom: 0.75rem;
+      font-size: 1rem;
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-  <div class="container">
-    <div class="spinner"></div>
-    <h1>Confirming your account...</h1>
-    <p id="status">Opening PlantPal app...</p>
-    <div id="error" style="display: none;" class="error"></div>
-    <a id="manualLink" href="#" style="display: none;" class="manual-link">Open PlantPal</a>
-  </div>
+  <div class="container" id="container"></div>
 
   <script>
-    (function() {
-      const statusEl = document.getElementById('status');
-      const errorEl = document.getElementById('error');
-      const manualLinkEl = document.getElementById('manualLink');
+    (async function() {
+      const container = document.getElementById('container');
+      
+      // Your Supabase credentials
+      const SUPABASE_URL = 'https://karqxqzhvnpkhejhdryz.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthcnF4cXpodm5wa2hlamhkcnl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY3ODQ1MjksImV4cCI6MjA1MjM2MDUyOX0.vXPHKBRbj8YSXLXwcP43-aVHvNxiqXNfwYuEkqhBz5U';
+      
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       try {
-        // Get the full URL including hash fragments
+        console.log('[PlantPal] Processing email confirmation...');
+        
+        // Get URL parameters
         const fullUrl = window.location.href;
-        console.log('Redirect page received URL:', fullUrl);
-
-        // Parse both query params and hash params
-        const url = new URL(fullUrl);
-        const params = new URLSearchParams(url.search);
-        const hashParams = new URLSearchParams(url.hash.substring(1));
-
-        // Combine both sets of parameters
+        const hashIndex = fullUrl.indexOf('#');
         const allParams = new URLSearchParams();
-        params.forEach((value, key) => allParams.set(key, value));
-        hashParams.forEach((value, key) => allParams.set(key, value));
 
-        console.log('Parsed parameters:', Object.fromEntries(allParams));
+        // Parse query and hash params
+        if (fullUrl.includes('?')) {
+          const queryString = fullUrl.substring(fullUrl.indexOf('?') + 1, hashIndex !== -1 ? hashIndex : fullUrl.length);
+          new URLSearchParams(queryString).forEach((v, k) => allParams.set(k, v));
+        }
+        if (hashIndex !== -1) {
+          new URLSearchParams(fullUrl.substring(hashIndex + 1)).forEach((v, k) => allParams.set(k, v));
+        }
 
-        // Check for tokens
-        const accessToken = allParams.get('access_token');
-        const refreshToken = allParams.get('refresh_token');
         const error = allParams.get('error');
         const errorDescription = allParams.get('error_description');
 
@@ -101,41 +110,52 @@
           throw new Error(errorDescription || error);
         }
 
+        const accessToken = allParams.get('access_token');
+        const refreshToken = allParams.get('refresh_token');
+
         if (!accessToken || !refreshToken) {
-          throw new Error('No authentication tokens found in URL');
+          throw new Error('No authentication tokens found. Please try clicking the confirmation link again.');
         }
 
-        // Build deep link with tokens
-        const deepLink = `plantpal://login-callback#access_token=${accessToken}&refresh_token=${refreshToken}`;
-        console.log('Attempting to open:', deepLink);
+        console.log('[PlantPal] Setting session...');
 
-        // Set up manual link as fallback
-        manualLinkEl.href = deepLink;
+        // Set the session in Supabase (this stores it in localStorage)
+        const { data, error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
 
-        // Try to open the app
-        window.location.href = deepLink;
+        if (sessionError) throw sessionError;
 
-        // Show manual link after 2 seconds if redirect didn't work
-        setTimeout(() => {
-          statusEl.textContent = 'App not opening automatically?';
-          manualLinkEl.style.display = 'inline-block';
-        }, 2000);
+        console.log('[PlantPal] Session created successfully!');
 
-        // Show success message after 5 seconds
-        setTimeout(() => {
-          statusEl.textContent = 'If the app opened, you can close this page.';
-        }, 5000);
+        // Show success message
+        container.innerHTML = `
+          <div class="success-icon">✅</div>
+          <h1>Email Confirmed!</h1>
+          <p>Your account has been successfully confirmed.</p>
+          <div class="steps">
+            <p style="font-weight: 600; margin-bottom: 1rem;">Next steps:</p>
+            <ol>
+              <li>Open the PlantPal app on your device</li>
+              <li>You'll be automatically logged in</li>
+              <li>Start your plant journey! 🌱</li>
+            </ol>
+          </div>
+          <p style="margin-top: 2rem; font-size: 0.9rem; opacity: 0.8;">
+            You can close this page and return to the app.
+          </p>
+        `;
 
       } catch (err) {
-        console.error('Redirect error:', err);
-        errorEl.textContent = err.message || 'Failed to confirm account';
-        errorEl.style.display = 'block';
-        statusEl.textContent = 'Something went wrong';
-        
-        // Redirect to app's error screen after 3 seconds
-        setTimeout(() => {
-          window.location.href = 'plantpal://login';
-        }, 3000);
+        console.error('[PlantPal] Error:', err);
+        container.innerHTML = `
+          <div class="error">
+            <h1>Something went wrong</h1>
+            <p>${err.message || 'Failed to confirm your email. Please try again.'}</p>
+          </div>
+          <a href="plantpal://login" class="button">Open PlantPal</a>
+        `;
       }
     })();
   </script>
